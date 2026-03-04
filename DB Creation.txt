@@ -1,0 +1,81 @@
+https://github.com/mca291-ship-it/LibraryManagementProject.git
+
+
+
+Books Table
+
+CREATE TABLE Books (
+    Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    ISBN VARCHAR(20) NOT NULL,
+    Title NVARCHAR(200) NOT NULL,
+    Author NVARCHAR(200) NOT NULL,
+    PublishedYear INT NULL,
+    TotalCopies INT NOT NULL,
+    AvailableCopies INT NOT NULL,
+
+    -- Concurrency
+    RowVersion ROWVERSION NOT NULL,
+
+    -- Audit
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    UpdatedAt DATETIME2 NULL,
+    IsDeleted BIT NOT NULL DEFAULT 0
+);
+
+Indexes
+
+CREATE UNIQUE INDEX UX_Books_ISBN ON Books(ISBN);
+CREATE INDEX IX_Books_Title ON Books(Title);
+CREATE INDEX IX_Books_IsDeleted ON Books(IsDeleted);
+
+ Members Table
+
+CREATE TABLE Members (
+    Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    FullName NVARCHAR(200) NOT NULL,
+    Email NVARCHAR(200) NOT NULL,
+    MembershipDate DATETIME2 NOT NULL,
+
+    RowVersion ROWVERSION NOT NULL,
+
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    UpdatedAt DATETIME2 NULL,
+    IsDeleted BIT NOT NULL DEFAULT 0
+);
+
+Indexes
+
+CREATE UNIQUE INDEX UX_Members_Email ON Members(Email);
+CREATE INDEX IX_Members_IsDeleted ON Members(IsDeleted);
+
+ Loans Table
+
+CREATE TABLE Loans (
+    Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    BookId UNIQUEIDENTIFIER NOT NULL,
+    MemberId UNIQUEIDENTIFIER NOT NULL,
+
+    BorrowDate DATETIME2 NOT NULL,
+    DueDate DATETIME2 NOT NULL,
+    ReturnDate DATETIME2 NULL,
+
+    RowVersion ROWVERSION NOT NULL,
+
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    UpdatedAt DATETIME2 NULL,
+    IsDeleted BIT NOT NULL DEFAULT 0,
+
+    CONSTRAINT FK_Loans_Books
+        FOREIGN KEY (BookId) REFERENCES Books(Id),
+
+    CONSTRAINT FK_Loans_Members
+        FOREIGN KEY (MemberId) REFERENCES Members(Id)
+);
+
+Indexes (Performance Critical)
+
+CREATE INDEX IX_Loans_BookId ON Loans(BookId);
+CREATE INDEX IX_Loans_MemberId ON Loans(MemberId);
+CREATE INDEX IX_Loans_Active ON Loans(BookId, ReturnDate);
+CREATE INDEX IX_Loans_Overdue ON Loans(DueDate, ReturnDate);
+
